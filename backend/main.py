@@ -32,6 +32,22 @@ openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 app = FastAPI(title="Assistant RH IA")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+
+        # TON FRONTEND EN LIGNE
+        "https://ia.hrconsult.com",
+        "https://www.hrconsult.com",
+        "https://hrconsult.com",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ============================================================
 # CORS
 # A ADAPTER AVEC TES DOMAINES REELS
