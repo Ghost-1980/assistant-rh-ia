@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assistant RH IA</title>
+  <meta name="description" content="Assistant RH IA - Questions sur le droit du travail, la paie et la gestion du personnel." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">IA</div>
+        <div>
+          <div class="brand-title">Votre assistant RH</div>
+          <div class="brand-subtitle">Bureau social</div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <h2>À quoi sert cet assistant ?</h2>
+        <p>
+          Il vous aide à trouver rapidement une réponse pratique à partir de la documentation disponible.
+        </p>
+      </div>
+
+      <div class="sidebar-card">
+        <h2>Exemples de questions</h2>
+        <div class="quick-list">
+          <button class="quick-btn">Quels sont les jours fériés en Belgique ?</button>
+          <button class="quick-btn">Quelle est la durée du préavis ?</button>
+          <button class="quick-btn">Comment engager un salarié ?</button>
+          <button class="quick-btn">Que faire en cas de maladie ?</button>
+          <button class="quick-btn">Que faut-il pour un contrat étudiant ?</button>
+        </div>
+      </div>
+
+      <div class="sidebar-card note">
+        <strong>Important</strong>
+        <p>
+          Les réponses sont fournies à titre informatif. Une validation humaine peut être nécessaire selon votre situation.
+        </p>
+      </div>
+    </aside>
+
+    <main class="chat-panel">
+      <header class="chat-header">
+        <div>
+          <h1>Votre assistant RH</h1>
+          <p>Posez votre question.</p>
+        </div>
+        <button id="clear-chat-btn" class="secondary-btn">Nouvelle conversation</button>
+      </header>
+
+      <section id="chat-messages" class="chat-messages">
+        <div class="message bot">
+          <div class="message-content">
+            Bonjour 👋<br><br>
+            Je peux vous aider sur les jours fériés, les contrats, les absences, le préavis, la paie et d'autres sujets RH, sur base de la documentation disponible.
+          </div>
+        </div>
+      </section>
+
+      <footer class="chat-footer">
+        <form id="chat-form" class="chat-form">
+          <textarea
+            id="chat-input"
+            placeholder="Exemple : Quels sont les jours fériés en Belgique ?"
+            rows="3"
+          ></textarea>
+          <div class="chat-actions">
+            <span id="status-text" class="status-text">Prêt</span>
+            <button type="submit" id="send-btn" class="primary-btn">Envoyer</button>
+          </div>
+        </form>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    window.APP_CONFIG = {
+      API_BASE_URL: "http://127.0.0.1:8000"
+    };
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
