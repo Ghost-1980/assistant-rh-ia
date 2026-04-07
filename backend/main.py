@@ -33,7 +33,7 @@ if not OPENAI_API_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
-app = FastAPI(title="Assistant RH IA", version="2.0.0")
+app = FastAPI(title="Assistant RH IA", version="2.1.0")
 
 # ============================================================
 # CORS
@@ -222,6 +222,10 @@ def normalize_text(text: str) -> str:
     return " ".join((text or "").strip().lower().split())
 
 
+def normalize_question(text: str) -> str:
+    return " ".join((text or "").strip().lower().split())
+
+
 def deduplicate_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     seen = set()
     deduped = []
@@ -331,6 +335,99 @@ def generate_answer(question: str, chunks: List[Dict[str, Any]]) -> str:
     return (response.choices[0].message.content or "").strip()
 
 
+# ============================================================
+# SMALL TALK / INTENTION SIMPLE
+# ============================================================
+
+def is_greeting_or_smalltalk(question: str) -> bool:
+    q = normalize_question(question)
+
+    simple_messages = {
+        "bonjour",
+        "bonsoir",
+        "salut",
+        "coucou",
+        "hello",
+        "hey",
+        "cc",
+        "merci",
+        "merci beaucoup",
+        "ça va",
+        "ca va",
+        "comment ça va",
+        "comment ca va",
+        "bonne journée",
+        "bonne journee",
+        "à bientôt",
+        "a bientot",
+    }
+
+    return q in simple_messages
+
+
+def generate_smalltalk_answer(question: str) -> str:
+    q = normalize_question(question)
+
+    if q in {"bonjour", "bonsoir", "salut", "coucou", "hello", "hey", "cc"}:
+        return (
+            "Bonjour 👋\n\n"
+            "Je suis votre assistant RH.\n"
+            "Je peux vous aider sur les contrats, les absences, le préavis, la paie, les jours fériés et d'autres questions RH.\n\n"
+            "Vous pouvez, par exemple, me demander :\n"
+            "- Quelle est la durée du préavis ?\n"
+            "- Que faire en cas de maladie ?\n"
+            "- Comment engager un salarié ?"
+        )
+
+    if q in {"merci", "merci beaucoup"}:
+        return (
+            "Avec plaisir.\n\n"
+            "N'hésitez pas à me poser une autre question RH si vous le souhaitez."
+        )
+
+    if q in {"ça va", "ca va", "comment ça va", "comment ca va"}:
+        return (
+            "Merci, je suis prêt à vous aider.\n\n"
+            "Posez-moi votre question RH et je vous répondrai sur base de la documentation disponible."
+        )
+
+    if q in {"bonne journée", "bonne journee", "à bientôt", "a bientot"}:
+        return "Merci, bonne journée à vous également."
+
+    return (
+        "Bonjour 👋\n\n"
+        "Je suis votre assistant RH. Posez-moi votre question et je ferai de mon mieux pour vous répondre."
+    )
+
+
+def is_too_vague(question: str) -> bool:
+    q = normalize_question(question)
+    vague_inputs = {
+        "ok",
+        "oui",
+        "non",
+        "test",
+        "essai",
+        "help",
+        "aide",
+        "c'est-à-dire",
+        "cest a dire",
+        "c'est a dire",
+    }
+    return q in vague_inputs or len(q) < 3
+
+
+def generate_vague_answer() -> str:
+    return (
+        "Je peux vous aider sur des questions RH comme le préavis, les absences, les contrats, la paie ou les jours fériés.\n\n"
+        "Pouvez-vous préciser votre demande ?"
+    )
+
+
+# ============================================================
+# LOGGING
+# ============================================================
+
 def log_chat(
     question: str,
     answer: str,
@@ -416,6 +513,49 @@ def ask(payload: AskRequest):
         raise HTTPException(status_code=400, detail="Question vide")
 
     try:
+        # 1. Small talk / salutations
+        if is_greeting_or_smalltalk(question):
+            answer = generate_smalltalk_answer(question)
+
+            log_chat(
+                question=question,
+                answer=answer,
+                chunks=[],
+                confidence="high",
+                warning="smalltalk"
+            )
+
+            return AskResponse(
+                status="ok",
+                question=question,
+                answer=answer,
+                sources=[],
+                confidence="high",
+                warning=None
+            )
+
+        # 2. Questions trop vagues
+        if is_too_vague(question):
+            answer = generate_vague_answer()
+
+            log_chat(
+                question=question,
+                answer=answer,
+                chunks=[],
+                confidence="medium",
+                warning="question_trop_vague"
+            )
+
+            return AskResponse(
+                status="ok",
+                question=question,
+                answer=answer,
+                sources=[],
+                confidence="medium",
+                warning=None
+            )
+
+        # 3. Logique RAG normale
         candidate_chunks = get_candidate_chunks(question, limit=limit)
         relevant_chunks = filter_relevant_chunks(candidate_chunks)
 
